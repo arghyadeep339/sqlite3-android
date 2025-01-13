@@ -1,0 +1,199 @@
+name: Build SQLite for Android
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macOS-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+
+      - name: Install NDK
+        run: |
+          # Download the NDK .dmg file
+          wget https://dl.google.com/android/repository/android-ndk-r27c-darwin.dmg -O android-ndk-r27c.dmg
+        
+          # Mount the .dmg file
+          hdiutil attach android-ndk-r27c.dmg
+        
+          # List the contents of the mounted volume to find the correct NDK folder
+          echo "Listing the contents of the mounted volume:"
+          ls -l /Volumes/Android\ NDK\ r27c
+        
+          # List the contents of the AndroidNDK12479018.app folder
+          echo "Listing contents of the AndroidNDK12479018.app folder:"
+          ls -l /Volumes/Android\ NDK\ r27c/AndroidNDK12479018.app
+        
+          # Check the NDK folder inside the Contents directory
+          echo "Listing contents of the NDK directory:"
+          ls -l /Volumes/Android\ NDK\ r27c/AndroidNDK12479018.app/Contents/NDK
+        
+          # Copy the NDK folder from the Contents/NDK directory
+          cp -R "/Volumes/Android NDK r27c/AndroidNDK12479018.app/Contents/NDK" $HOME/ndk
+        
+          # Unmount the .dmg file
+          hdiutil detach "/Volumes/Android NDK r27c"
+        
+          # Set NDK_PATH environment variable
+          export NDK_PATH=$HOME/ndk
+        
+          # Add NDK path to environment variables
+          echo "NDK_PATH=$NDK_PATH" >> $GITHUB_ENV
+          echo "Adding NDK to PATH"
+          echo "$NDK_PATH:$PATH" >> $GITHUB_PATH
+        
+          # Verify if the NDK was copied successfully and if ndk-build exists
+          ls -l $HOME/ndk
+          ls -l $NDK_PATH/ndk-build
+      
+      - name: Verify NDK Installation
+        run: |
+          echo "NDK Path: $NDK_PATH"
+          ls -l $NDK_PATH
+          # Check if ndk-build is accessible in the PATH
+          which ndk-build
+          # Check the version of ndk-build
+          ndk-build --version
+                
+      - name: Source Makefile environment variables
+        run: |
+          # Extract variables from the Makefile
+          SQLITE_AMALGATION=$(grep -E '^SQLITE_AMALGATION\s*:=\s*\S+' Makefile | sed -e 's/.*:= \(.*\)/\1/')
+          SQLITE_SOURCEURL=$(grep -E '^SQLITE_SOURCEURL\s*:=\s*\S+' Makefile | sed -e 's/.*:= \(.*\)/\1/')
+          SQLITE_SOURCEURL=$(echo "$SQLITE_SOURCEURL" | sed "s/\$(SQLITE_AMALGATION)/$SQLITE_AMALGATION/")
+          SQLITE_SOURCEURL=$(echo "$SQLITE_SOURCEURL" | sed -e 's/ *#.*//')  # Remove trailing comments
+          SQLITE_SOURCEURL="https://www.${SQLITE_SOURCEURL#*:\/\/}"  # Ensure URL has 'www.'
+
+          # Save variables to environment
+          echo "SQLITE_AMALGATION=$SQLITE_AMALGATION" >> $GITHUB_ENV
+          echo "SQLITE_SOURCEURL=$SQLITE_SOURCEURL" >> $GITHUB_ENV
+
+          # Print the extracted variables
+          echo "SQLITE_AMALGATION: $SQLITE_AMALGATION"
+          echo "SQLITE_SOURCEURL: $SQLITE_SOURCEURL"
+
+      - name: Download SQLite Source ZIP if needed
+        run: |
+          echo "SQLITE_SOURCEURL: $SQLITE_SOURCEURL"
+          if [ ! -f "${SQLITE_AMALGATION}.zip" ]; then
+            echo "Downloading SQLite..."
+            wget "$SQLITE_SOURCEURL" -O "${SQLITE_AMALGATION}.zip"
+          else
+            echo "SQLite archive already exists."
+          fi
+      
+      - name: Debugging - List current directory
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Listing files:"
+          ls -l
+        
+      - name: Create libs directory if it doesn't exist
+        run: |
+          mkdir -p libs/arm64-v8a libs/armeabi-v7a libs/x86 libs/x86_64
+
+      - name: Build SQLite using NDK
+        run: |
+          # Ensure NDK is in the PATH
+          export PATH=$NDK_PATH:$PATH
+        
+          # Define target architectures and build
+          TARGET_ARCH="arm64-v8a armeabi-v7a x86 x86_64"
+          make build TARGET_ABI="$TARGET_ARCH" INSTALL_DIR=libs V=1 || { echo 'Build failed'; exit 1; }
+        
+      - name: Check if SQLite binaries are created
+        run: |
+          if [ ! -f /Users/runner/work/sqlite3-android/sqlite3-android/libs/armeabi-v7a/sqlite3 ]; then
+            echo "Error: libs/armeabi-v7a/sqlite3 not found!"
+            exit 1
+          fi
+          if [ ! -f /Users/runner/work/sqlite3-android/sqlite3-android/libs/arm64-v8a/sqlite3 ]; then
+            echo "Error: libs/arm64-v8a/sqlite3 not found!"
+            exit 1
+          fi
+          if [ ! -f /Users/runner/work/sqlite3-android/sqlite3-android/libs/x86/sqlite3 ]; then
+            echo "Error: libs/x86/sqlite3 not found!"
+            exit 1
+          fi
+          if [ ! -f /Users/runner/work/sqlite3-android/sqlite3-android/libs/x86_64/sqlite3 ]; then
+            echo "Error: libs/x86_64/sqlite3 not found!"
+            exit 1
+          fi
+        
+      # Generate Release Info
+      - name: Generate Release Info
+        shell: bash
+        run: |
+          # Creating a changelog or release notes
+          echo "
+          **Change log** :point_down:
+          - Added support for multiple architectures (armeabi-v7a, arm64-v8a, x86, x86_64).
+          - Updated SQLite to the latest version.
+          - Fixed bugs in the previous version.
+          - [sqlite](https://github.com/sqlite/sqlite/tags)
+          " > ${{ github.workspace }}/CHANGELOG.txt
+      
+      - name: Check if libs directory exists
+        run: |
+          if [ -d "/Users/runner/work/sqlite3-android/sqlite3-android/libs" ]; then
+            echo "libs directory exists"
+          else
+            echo "libs directory does not exist"
+            exit 1
+          fi
+                  
+      - name: List of child directory in libs directory
+        run: |
+          ls -d /Users/runner/work/sqlite3-android/sqlite3-android/libs
+      
+      - name: Rename artifacts
+        run: |
+          mv /Users/runner/work/sqlite3-android/sqlite3-android/libs/arm64-v8a/sqlite3 /Users/runner/work/sqlite3-android/sqlite3-android/libs/arm64-v8a/sqlite-arm64-v8a
+          mv /Users/runner/work/sqlite3-android/sqlite3-android/libs/armeabi-v7a/sqlite3 /Users/runner/work/sqlite3-android/sqlite3-android/libs/armeabi-v7a/sqlite-armeabi-v7a
+          mv /Users/runner/work/sqlite3-android/sqlite3-android/libs/x86/sqlite3 /Users/runner/work/sqlite3-android/sqlite3-android/libs/x86/sqlite-x86
+          mv /Users/runner/work/sqlite3-android/sqlite3-android/libs/x86_64/sqlite3 /Users/runner/work/sqlite3-android/sqlite3-android/libs/x86_64/sqlite-x86_64
+
+        # Release SQLite Binary for Android
+      - name: Create Release
+        uses: ncipollo/release-action@v1.14.0
+        with:
+          tag: all
+          artifacts: |
+            /Users/runner/work/sqlite3-android/sqlite3-android/libs/arm64-v8a/sqlite-arm64-v8a
+            /Users/runner/work/sqlite3-android/sqlite3-android/libs/armeabi-v7a/sqlite-armeabi-v7a
+            /Users/runner/work/sqlite3-android/sqlite3-android/libs/x86/sqlite-x86
+            /Users/runner/work/sqlite3-android/sqlite3-android/libs/x86_64/sqlite-x86_64
+          name: SQLite Binary for Android
+          bodyFile: ${{ github.workspace }}/CHANGELOG.txt
+          allowUpdates: true
+          generateReleaseNotes: false
+          makeLatest: true  # Mark this release as the latest
+          omitBody: false
+          omitDraftDuringUpdate: false
+          omitName: false
+          omitPrereleaseDuringUpdate: false
+          removeArtifacts: false
+          replacesArtifacts: true  # Replaces artifacts from previous releases
+          skipIfReleaseExists: false
+          token: ${{ secrets.GITHUB_TOKEN }}  # Make sure your GitHub Token is available
+          updateOnlyUnreleased: false
+
+      - name: Clean up
+        run: make clean-all
+        # "Developer: @arghya339 (github.com/arghya339)"

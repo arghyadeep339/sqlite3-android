@@ -1,4 +1,4 @@
-APP_PLATFORM := android-16
+APP_PLATFORM := android-21  # SDK21 (Android5)
 APP_PIE := true
 LOCAL_PATH := $(call my-dir)
 

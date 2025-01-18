@@ -1,9 +1,9 @@
 # /home/norbert/sqlite3-android/Makefile
 #
 .DEFAULT_GOAL		:= build
-SQLITE_AMALGATION	:= sqlite-src-3480000
+SQLITE_AMALGATION	:= sqlite-amalgamation-3480000
 SQLITE_SOURCEURL	:= https://sqlite.org/2025/$(SQLITE_AMALGATION).zip  # SQLite --version 3.47.2 Source Code: https://www.sqlite.org/download.html
-# TARGET ABI        := armeabi armeabi-v7a arm64-v8a x86 x86_64 mips mips64 (or all)
+# TARGET ABI            := armeabi armeabi-v7a arm64-v8a x86 x86_64 mips mips64 (or all)
 TARGET_ABI		    := arm64-v8a armeabi-v7a x86 x86_64
 # URL_DOWNLOADER	:= wget -c
 URL_DOWNLOADER		:= aria2c -q -c -x 3

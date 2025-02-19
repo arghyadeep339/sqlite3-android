@@ -144,9 +144,40 @@ jobs:
           echo "
           **Change log** :point_down:
           - Added support for multiple architectures (armeabi-v7a, arm64-v8a, x86, x86_64).
-          - Updated SQLite to the latest version.
+          - Updated SQLite to the latest version. (v3.49.1)
           - Fixed bugs in the previous version.
           - [sqlite](https://github.com/sqlite/sqlite/tags)
+
+          **How to use SQLite on Android** :point_down:
+
+          - install android-platform-tools:
+          Windows:
+          ~ winget install Google.PlatformTools --force --silent 
+          macOS:
+          ~ brew install --cask android-platform-tools
+
+          - starting adb
+          ~ adb devices
+
+          - check sqlite exist or not in your device
+          ~ adb shell ls -l /data/local/tmp/sqlite
+
+          - remove sqlite form device if it exist
+          ~ adb shell rm /data/local/tmp/sqlite
+
+          - push the sqlite3 binary from computer Downloads dir to the device /data/local/tmp dir 
+          Windows:
+          ~ adb push $env:USERPROFILE\Downlaods\sqlite /data/local/tmp/
+          macOS:
+          ~ adb push $HOME\Downlaods\sqlite /data/local/tmp/
+
+          - give execute (--x) permission
+          ~ adb shell chmod +x /data/local/tmp/sqlite
+
+          - check the sqlite version
+          ~ adb shell /data/local/tmp/sqlite --version
+
+          **Full Changelog**: https://github.com/arghya339/sqlite3-android/commits/all
           " > ${{ github.workspace }}/CHANGELOG.txt
       
       - name: Check if libs directory exists

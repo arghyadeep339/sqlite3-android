@@ -144,7 +144,7 @@ jobs:
           echo "
           **Change log** :point_down:
           - Added support for multiple architectures (armeabi-v7a, arm64-v8a, x86, x86_64).
-          - Updated SQLite to the latest version. (v3.49.1)
+          - Updated SQLite to the latest version. (v3.xx.x)
           - Fixed bugs in the previous version.
           - [sqlite](https://github.com/sqlite/sqlite/tags)
 

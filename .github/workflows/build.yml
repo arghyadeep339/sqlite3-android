@@ -165,9 +165,9 @@ jobs:
           ~ adb shell rm /data/local/tmp/sqlite
           - push the sqlite3 binary from computer Downloads dir to the device /data/local/tmp dir:
           Windows:
-          ~ adb push $env:USERPROFILE\Downlaods\sqlite /data/local/tmp/
+          ~ adb push "$env:USERPROFILE\Downloads\sqlite" /data/local/tmp/
           macOS:
-          ~ adb push $HOME\Downlaods\sqlite /data/local/tmp/
+          ~ adb push "$HOME\Downloads\sqlite" /data/local/tmp/
           - give execute (--x) permission
           ~ adb shell chmod +x /data/local/tmp/sqlite
           - check the sqlite version

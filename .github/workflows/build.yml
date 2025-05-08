@@ -140,11 +140,14 @@ jobs:
       - name: Generate Release Info
         shell: bash
         run: |
-          # Creating a changelog or release notes
+          # Get latest SQLite Version
+          SQLite_Version=$(curl -s https://sqlite.org/ | grep -oP 'Version \K\d+\.\d+\.\d+')
+          
+          # Creating a changelog or release notes with dynamic sqlite version
           echo "
           **Change log** :point_down:
           - Added support for multiple architectures (armeabi-v7a, arm64-v8a, x86, x86_64).
-          - Updated SQLite to the latest version. (v3.xx.x)
+          - Updated SQLite to the latest version. (v$SQLite_Version)
           - Fixed bugs in the previous version.
           - [sqlite](https://github.com/sqlite/sqlite/tags)
 

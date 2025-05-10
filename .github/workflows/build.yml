@@ -146,6 +146,7 @@ jobs:
           # Creating a changelog or release notes with dynamic sqlite version
           echo "
           **Change log** :point_down:
+          - Support Android 5 and up
           - Added support for multiple architectures (armeabi-v7a, arm64-v8a, x86, x86_64).
           - Updated SQLite to the latest version. (v$SQLite_Version)
           - Fixed bugs in the previous version.
@@ -157,20 +158,25 @@ jobs:
           ~ winget install Google.PlatformTools --force --silent 
           macOS:
           ~ brew install --cask android-platform-tools
-          - starting adb
+          - starting adb:
           ~ adb devices
-          - check sqlite exist or not in your device
+          - download sqlite binary for android:
+          Windows:
+          ~ $arch = adb shell getprop ro.product.cpu.abi; Invoke-WebRequest -Uri https://github.com/arghya339/sqlite3-android/releases/download/all/sqlite-$arch -OutFile \$env:USERPROFILE\Downloads\sqlite
+          macOS:
+          ~ arch=$(adb shell getprop ro.product.cpu.abi) && curl -L "https://github.com/arghya339/sqlite3-android/releases/download/all/sqlite-$arch" -o "\$HOME/Downloads/sqlite"
+          - check sqlite exist or not in your device:
           ~ adb shell ls -l /data/local/tmp/sqlite
-          - remove sqlite form device if it exist
+          - remove sqlite form device if it exist:
           ~ adb shell rm /data/local/tmp/sqlite
           - push the sqlite3 binary from computer Downloads dir to the device /data/local/tmp dir:
           Windows:
           ~ adb push \$env:USERPROFILE\Downloads\sqlite /data/local/tmp/
           macOS:
           ~ adb push \$HOME/Downloads/sqlite /data/local/tmp/
-          - give execute (--x) permission
+          - give execute (--x) permission:
           ~ adb shell chmod +x /data/local/tmp/sqlite
-          - check the sqlite version
+          - check the sqlite version:
           ~ adb shell /data/local/tmp/sqlite --version
 
           **Full Changelog**: https://github.com/arghya339/sqlite3-android/commits/all

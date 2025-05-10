@@ -146,7 +146,7 @@ jobs:
           # Creating a changelog or release notes with dynamic sqlite version
           echo "
           **Change log** :point_down:
-          - Support Android 5 and up
+          - Requires Android 5.0 and up
           - Added support for multiple architectures (armeabi-v7a, arm64-v8a, x86, x86_64).
           - Updated SQLite to the latest version. (v$SQLite_Version)
           - Fixed bugs in the previous version.
@@ -162,9 +162,9 @@ jobs:
           ~ adb devices
           - download sqlite binary for android:
           Windows:
-          ~ $arch = adb shell getprop ro.product.cpu.abi; Invoke-WebRequest -Uri https://github.com/arghya339/sqlite3-android/releases/download/all/sqlite-$arch -OutFile \$env:USERPROFILE\Downloads\sqlite
+          ~ \$arch = adb shell getprop ro.product.cpu.abi; Invoke-WebRequest -Uri https://github.com/arghya339/sqlite3-android/releases/download/all/sqlite-$arch -OutFile \$env:USERPROFILE\Downloads\sqlite
           macOS:
-          ~ arch=$(adb shell getprop ro.product.cpu.abi) && curl -L "https://github.com/arghya339/sqlite3-android/releases/download/all/sqlite-$arch" -o "\$HOME/Downloads/sqlite"
+          ~ arch=\$(adb shell getprop ro.product.cpu.abi) && curl -L "https://github.com/arghya339/sqlite3-android/releases/download/all/sqlite-$arch" -o "\$HOME/Downloads/sqlite"
           - check sqlite exist or not in your device:
           ~ adb shell ls -l /data/local/tmp/sqlite
           - remove sqlite form device if it exist:

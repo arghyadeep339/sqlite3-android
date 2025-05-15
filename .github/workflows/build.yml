@@ -73,12 +73,14 @@ jobs:
       - name: Source Makefile environment variables
         run: |
           # Extract SQLITE_AMALGATION
-          SQLITE_AMALGATION=$(make --silent print | grep '^SQLITE_AMALGATION:' | awk -F': ' '{print $2}' | tr -d '[:space:]')
+          SQLITE_AMALGATION_LINE=$(make --silent print | grep '^SQLITE_AMALGATION:')
+          SQLITE_AMALGATION=$(echo "$SQLITE_AMALGATION_LINE" | sed 's/^SQLITE_AMALGATION: //' | tr -d '[:space:]')
           echo "SQLITE_AMALGATION=$SQLITE_AMALGATION" >> $GITHUB_ENV
           echo "Extracted SQLITE_AMALGATION: $SQLITE_AMALGATION"
 
           # Extract SQLITE_SOURCEURL
-          SQLITE_SOURCEURL=$(make --silent print | grep '^SQLITE_SOURCEURL:' | awk -F': ' '{print $2}' | tr -d '[:space:]')
+          SQLITE_SOURCEURL_LINE=$(make --silent print | grep '^SQLITE_SOURCEURL:')
+          SQLITE_SOURCEURL=$(echo "$SQLITE_SOURCEURL_LINE" | sed 's/^SQLITE_SOURCEURL: //' | tr -d '[:space:]')
           echo "SQLITE_SOURCEURL=$SQLITE_SOURCEURL" >> $GITHUB_ENV
           echo "Extracted SQLITE_SOURCEURL: $SQLITE_SOURCEURL"
       

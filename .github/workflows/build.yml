@@ -72,22 +72,15 @@ jobs:
                 
       - name: Source Makefile environment variables
         run: |
-          # Use 'make print' with silent mode
-          SQLITE_AMALGATION=$(make --silent print | grep 'SQLITE_AMALGATION=' | cut -d= -f2 | tr -d '[:space:]')
-          SQLITE_SOURCEURL=$(make --silent print | grep 'SQLITE_SOURCEURL=' | cut -d= -f2 | tr -d '[:space:]')
-
-          # Validate variables
-          if [ -z "$SQLITE_AMALGATION" ] || [ -z "$SQLITE_SOURCEURL" ]; then
-            echo "Error: Failed to extract variables from Makefile"
-            exit 1
-          fi
-
-          # Save to environment
+          # Extract SQLITE_AMALGATION
+          SQLITE_AMALGATION=$(make --silent print | grep '^SQLITE_AMALGATION' | cut -d'=' -f2 | tr -d '[:space:]')
           echo "SQLITE_AMALGATION=$SQLITE_AMALGATION" >> $GITHUB_ENV
-          echo "SQLITE_SOURCEURL=$SQLITE_SOURCEURL" >> $GITHUB_ENV
+          echo "Extracted SQLITE_AMALGATION: $SQLITE_AMALGATION"
 
-          echo "SQLITE_AMALGATION: $SQLITE_AMALGATION"
-          echo "SQLITE_SOURCEURL: $SQLITE_SOURCEURL"
+          # Extract SQLITE_SOURCEURL
+          SQLITE_SOURCEURL=$(make --silent print | grep '^SQLITE_SOURCEURL' | cut -d'=' -f2 | tr -d '[:space:]')
+          echo "SQLITE_SOURCEURL=$SQLITE_SOURCEURL" >> $GITHUB_ENV
+          echo "Extracted SQLITE_SOURCEURL: $SQLITE_SOURCEURL"
       
       - name: Download SQLite Source ZIP if needed
         run: |

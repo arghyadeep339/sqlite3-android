@@ -184,6 +184,8 @@ jobs:
       # Generate Release Info
       - name: Generate Release Info
         shell: bash
+        env:
+          GH_OWNER: ${{ github.repository_owner }} # This will be the repo owner's username (e.g., "arghya339")
         run: |
           # Get latest SQLite Version
           SQLite_Version=$(curl -s https://sqlite.org/ | grep -oE 'Version [0-9]+\.[0-9]+\.[0-9]+' | cut -d' ' -f2)
@@ -207,11 +209,11 @@ jobs:
           ~ adb devices
           - download sqlite binary for android:
           Windows:
-          ~ \$arch = adb shell getprop ro.product.cpu.abi; Invoke-WebRequest -Uri https://github.com/arghya339/sqlite3-android/releases/download/all/sqlite-\$arch -OutFile \$env:USERPROFILE\Downloads\sqlite
+          ~ \$arch = adb shell getprop ro.product.cpu.abi; Invoke-WebRequest -Uri https://github.com/$GH_OWNER/sqlite3-android/releases/download/all/sqlite-\$arch -OutFile \$env:USERPROFILE\Downloads\sqlite
           macOS:
-          ~ arch=\$(adb shell getprop ro.product.cpu.abi) && curl -L "https://github.com/arghya339/sqlite3-android/releases/download/all/sqlite-\$arch" -o "\$HOME/Downloads/sqlite"
+          ~ arch=\$(adb shell getprop ro.product.cpu.abi) && curl -L "https://github.com/$GH_OWNER/sqlite3-android/releases/download/all/sqlite-\$arch" -o "\$HOME/Downloads/sqlite"
           Termux with SU:
-          ~ arch=\$(getprop ro.product.cpu.abi) && curl -L "https://github.com/arghya339/sqlite3-android/releases/download/all/sqlite-\$arch" -o "\$HOME/sqlite"
+          ~ arch=\$(getprop ro.product.cpu.abi) && curl -L "https://github.com/$GH_OWNER/sqlite3-android/releases/download/all/sqlite-\$arch" -o "\$HOME/sqlite"
           - check sqlite exist or not in your device:
           ~ adb shell ls -l /data/local/tmp/sqlite
           Termux with SU:
@@ -236,9 +238,9 @@ jobs:
           Termux with SU:
           ~ su -c "/data/local/tmp/sqlite --version"
           [Termux](https://github.com/termux/termux-app/releases/) w/o SU:
-          ~ arch=\$(getprop ro.product.cpu.abi) && curl -L "https://github.com/arghya339/sqlite3-android/releases/download/all/sqlite-\$arch" -o "\$HOME/sqlite" > /dev/null 2>&1 && chmod +x "\$HOME/sqlite" && echo && "\$HOME/sqlite" --version
+          ~ arch=\$(getprop ro.product.cpu.abi) && curl -L "https://github.com/$GH_OWNER/sqlite3-android/releases/download/all/sqlite-\$arch" -o "\$HOME/sqlite" > /dev/null 2>&1 && chmod +x "\$HOME/sqlite" && echo && "\$HOME/sqlite" --version
 
-          **Full Changelog**: https://github.com/arghya339/sqlite3-android/commits/all
+          **Full Changelog**: https://github.com/$GH_OWNER/sqlite3-android/commits/all
           " > ${{ github.workspace }}/CHANGELOG.txt
       
       - name: Check if libs directory exists

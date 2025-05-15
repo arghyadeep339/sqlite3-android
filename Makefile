@@ -11,8 +11,6 @@ SQLITE_INFO_FILE := .sqlite_info
 -include $(SQLITE_INFO_FILE)
 
 # Rule to create/update .sqlite_info
-# This runs only if .sqlite_info is missing or older than its (non-existent) prerequisites.
-# Effectively, it runs once per 'make' session if the file is missing, or if explicitly called.
 $(SQLITE_INFO_FILE):
 	@echo "===> Fetching SQLite metadata..."
 	@SQLITE_DOWNLOAD_PAGE_CONTENT=$$(curl -fsSL https://sqlite.org/download.html); \
@@ -32,7 +30,7 @@ $(SQLITE_INFO_FILE):
 	fi; \
 	YYYY_VAL=$$(echo "$$AMALGAMATION_LINE" | cut -d',' -f3 | cut -d'/' -f1); \
 	AMALGAMATION_ZIP_FILENAME=$$(echo "$$AMALGAMATION_LINE" | cut -d',' -f3 | cut -d'/' -f2); \
-	SQLITE_AMALGATION_VAL=$$(echo "$$AMALGAMATION_ZIP_FILENAME" | sed 's/\.zip$//'); \
+	SQLITE_AMALGATION_VAL=$$(echo "$$AMALGAMATION_ZIP_FILENAME" | sed 's/\.zip$$//'); \
 	if [ -z "$$YYYY_VAL" ] || [ -z "$$SQLITE_AMALGATION_VAL" ]; then \
 		echo "Error: Failed to parse YYYY or SQLITE_AMALGATION from CSV data." >&2; \
 		echo "AMALGAMATION_LINE: $$AMALGAMATION_LINE" >&2; \

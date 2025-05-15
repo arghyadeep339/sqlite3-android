@@ -70,6 +70,18 @@ jobs:
           # Check the version of ndk-build
           ndk-build --version
                 
+      - name: Debug curl output
+        run: |
+          curl -s https://sqlite.org/download.html > sqlite_download_page.html
+          echo "--- Start of sqlite_download_page.html ---"
+          cat sqlite_download_page.html
+          echo "--- End of sqlite_download_page.html ---"
+          # You can then try your sed commands on this file
+          YYYY_TEST=$(cat sqlite_download_page.html | sed -n 's/.*href="\([0-9]\{4\}\)\/sqlite-amalgamation-[0-9]*\.zip".*/\1/p' | head -n1)
+          AMALGATION_TEST=$(cat sqlite_download_page.html | sed -n 's/.*href=".*\/\(sqlite-amalgamation-[0-9]*\)\.zip".*/\1/p' | head -n1)
+          echo "YYYY_TEST: $YYYY_TEST"
+          echo "AMALGATION_TEST: $AMALGATION_TEST"
+      
       - name: Source Makefile environment variables
         run: |
           # Extract SQLITE_AMALGATION

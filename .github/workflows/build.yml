@@ -70,22 +70,67 @@ jobs:
           # Check the version of ndk-build
           ndk-build --version
                 
+      - name: Debug curl output # This step is for debugging
+        run: |
+          curl -s https://sqlite.org/download.html > sqlite_download_page.html
+          echo "--- Start of sqlite_download_page.html ---"
+          cat sqlite_download_page.html
+          echo "--- End of sqlite_download_page.html ---"
+          # The following YYYY_TEST and AMALGATION_TEST are for debugging this step only.
+          # They attempt to parse the CSV block directly here for verification.
+          CSV_LINE_TEST=$(cat sqlite_download_page.html | grep '^PRODUCT,[^,]*,[0-9]\{4\}/sqlite-amalgamation-[0-9]*\.zip' | head -n 1)
+          echo "CSV_LINE_TEST: $CSV_LINE_TEST"
+          YYYY_TEST=$(echo "$CSV_LINE_TEST" | cut -d',' -f3 | cut -d'/' -f1)
+          AMALGATION_ZIP_TEST=$(echo "$CSV_LINE_TEST" | cut -d',' -f3 | cut -d'/' -f2)
+          AMALGATION_TEST=$(echo "$AMALGATION_ZIP_TEST" | sed 's/\.zip$$//')
+          echo "YYYY_TEST (from debug step): $YYYY_TEST"
+          echo "AMALGATION_TEST (from debug step): $AMALGATION_TEST"
+          echo "AMALGATION_ZIP_TEST (from debug step): $AMALGATION_ZIP_TEST"
+      
       - name: Source Makefile environment variables
         run: |
+          # Ensure .sqlite_info is created and variables are available for subsequent make calls
+          make $(SQLITE_INFO_FILE) 
+          echo "--- Content of .sqlite_info after creation ---"
+          cat .sqlite_info || echo ".sqlite_info not found or empty"
+          echo "--- End of .sqlite_info content ---"
+
+          # Now that .sqlite_info exists, make print should work and variables should be set
+          SQLITE_AMALGATION_LINE=$(make --silent print | grep '^SQLITE_AMALGATION:')
+          SQLITE_AMALGATION=$(echo "$SQLITE_AMALGATION_LINE" | sed 's/^SQLITE_AMALGATION: //' | tr -d '[:space:]')
+          echo "SQLITE_AMALGATION_FROM_MAKE_PRINT=$SQLITE_AMALGATION" # For debugging
+          echo "SQLITE_AMALGATION=$SQLITE_AMALGATION" >> $GITHUB_ENV
+          echo "Extracted SQLITE_AMALGATION: $SQLITE_AMALGATION"
+
+          SQLITE_SOURCEURL_LINE=$(make --silent print | grep '^SQLITE_SOURCEURL:')
+          SQLITE_SOURCEURL=$(echo "$SQLITE_SOURCEURL_LINE" | sed 's/^SQLITE_SOURCEURL: //' | tr -d '[:space:]')
+          echo "SQLITE_SOURCEURL_FROM_MAKE_PRINT=$SQLITE_SOURCEURL" # For debugging
+          echo "SQLITE_SOURCEURL=$SQLITE_SOURCEURL" >> $GITHUB_ENV
+          echo "Extracted SQLITE_SOURCEURL: $SQLITE_SOURCEURL"
+          
+          # Verify variables are not empty
+          if [ -z "$SQLITE_AMALGATION" ] || [ -z "$SQLITE_SOURCEURL" ]; then
+            echo "Error: SQLITE_AMALGATION or SQLITE_SOURCEURL is empty after sourcing from Makefile."
+            ls -l .sqlite_info # Show .sqlite_info details
+            exit 1
+          fi
+      
+#      - name: Source Makefile environment variables
+#        run: |
           # Extract variables from the Makefile
-          SQLITE_AMALGATION=$(grep -E '^SQLITE_AMALGATION\s*:=\s*\S+' Makefile | sed -e 's/.*:= \(.*\)/\1/')
-          SQLITE_SOURCEURL=$(grep -E '^SQLITE_SOURCEURL\s*:=\s*\S+' Makefile | sed -e 's/.*:= \(.*\)/\1/')
-          SQLITE_SOURCEURL=$(echo "$SQLITE_SOURCEURL" | sed "s/\$(SQLITE_AMALGATION)/$SQLITE_AMALGATION/")
-          SQLITE_SOURCEURL=$(echo "$SQLITE_SOURCEURL" | sed -e 's/ *#.*//')  # Remove trailing comments
-          SQLITE_SOURCEURL="https://www.${SQLITE_SOURCEURL#*:\/\/}"  # Ensure URL has 'www.'
+#          SQLITE_AMALGATION=$(grep -E '^SQLITE_AMALGATION\s*:=\s*\S+' Makefile | sed -e 's/.*:= \(.*\)/\1/')
+#          SQLITE_SOURCEURL=$(grep -E '^SQLITE_SOURCEURL\s*:=\s*\S+' Makefile | sed -e 's/.*:= \(.*\)/\1/')
+#          SQLITE_SOURCEURL=$(echo "$SQLITE_SOURCEURL" | sed "s/\$(SQLITE_AMALGATION)/$SQLITE_AMALGATION/")
+#          SQLITE_SOURCEURL=$(echo "$SQLITE_SOURCEURL" | sed -e 's/ *#.*//')  # Remove trailing comments
+#          SQLITE_SOURCEURL="https://www.${SQLITE_SOURCEURL#*:\/\/}"  # Ensure URL has 'www.'
 
           # Save variables to environment
-          echo "SQLITE_AMALGATION=$SQLITE_AMALGATION" >> $GITHUB_ENV
-          echo "SQLITE_SOURCEURL=$SQLITE_SOURCEURL" >> $GITHUB_ENV
+#          echo "SQLITE_AMALGATION=$SQLITE_AMALGATION" >> $GITHUB_ENV
+#          echo "SQLITE_SOURCEURL=$SQLITE_SOURCEURL" >> $GITHUB_ENV
 
           # Print the extracted variables
-          echo "SQLITE_AMALGATION: $SQLITE_AMALGATION"
-          echo "SQLITE_SOURCEURL: $SQLITE_SOURCEURL"
+#          echo "SQLITE_AMALGATION: $SQLITE_AMALGATION"
+#          echo "SQLITE_SOURCEURL: $SQLITE_SOURCEURL"
 
       - name: Download SQLite Source ZIP if needed
         run: |
@@ -244,3 +289,4 @@ jobs:
       - name: Clean up
         run: make clean-all
         # "Developer: @arghya339 (github.com/arghya339)"
+########################################################

@@ -70,21 +70,27 @@ jobs:
           # Check the version of ndk-build
           ndk-build --version
                 
-      - name: Debug curl output
+      - name: Debug curl output # This step is for manual debugging; its test variables are not used by the build
         run: |
           curl -s https://sqlite.org/download.html > sqlite_download_page.html
           echo "--- Start of sqlite_download_page.html ---"
           cat sqlite_download_page.html
           echo "--- End of sqlite_download_page.html ---"
-          # You can then try your sed commands on this file
-          YYYY_TEST=$(cat sqlite_download_page.html | sed -n 's/.*href="\([0-9]\{4\}\)\/sqlite-amalgamation-[0-9]*\.zip".*/\1/p' | head -n1)
-          AMALGATION_TEST=$(cat sqlite_download_page.html | sed -n 's/.*href=".*\/\(sqlite-amalgamation-[0-9]*\)\.zip".*/\1/p' | head -n1)
-          echo "YYYY_TEST: $YYYY_TEST"
-          echo "AMALGATION_TEST: $AMALGATION_TEST"
-      
+          # The following YYYY_TEST and AMALGATION_TEST are for debugging this step only.
+          # They attempt to parse the CSV block directly here for verification.
+          CSV_LINE_TEST=$(cat sqlite_download_page.html | grep '^PRODUCT,[^,]*,[0-9]\{4\}/sqlite-amalgamation-[0-9]*\.zip' | head -n 1)
+          echo "CSV_LINE_TEST: $CSV_LINE_TEST"
+          YYYY_TEST=$(echo "$CSV_LINE_TEST" | cut -d',' -f3 | cut -d'/' -f1)
+          AMALGATION_ZIP_TEST=$(echo "$CSV_LINE_TEST" | cut -d',' -f3 | cut -d'/' -f2)
+          AMALGATION_TEST=$(echo "$AMALGATION_ZIP_TEST" | sed 's/\.zip$$//')
+          echo "YYYY_TEST (from debug step): $YYYY_TEST"
+          echo "AMALGATION_TEST (from debug step): $AMALGATION_TEST"
+          echo "AMALGATION_ZIP_TEST (from debug step): $AMALGATION_ZIP_TEST"
+
       - name: Source Makefile environment variables
         run: |
           # Extract SQLITE_AMALGATION
+          # The make --silent print command will now correctly output the variables
           SQLITE_AMALGATION_LINE=$(make --silent print | grep '^SQLITE_AMALGATION:')
           SQLITE_AMALGATION=$(echo "$SQLITE_AMALGATION_LINE" | sed 's/^SQLITE_AMALGATION: //' | tr -d '[:space:]')
           echo "SQLITE_AMALGATION=$SQLITE_AMALGATION" >> $GITHUB_ENV

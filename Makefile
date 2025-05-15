@@ -81,8 +81,12 @@ clean-all: clean
 	@rm -f "$(SQLITE_AMALGATION).zip"
 
 print: $(SQLITE_INFO_FILE)
-	@if [ -z "$(SQLITE_AMALGATION)" ] || [ -z "$(SQLITE_SOURCEURL)" ] || [ -z "$(YYYY)" ]; then \
-		$(error Essential SQLite variables are not set. Check $(SQLITE_INFO_FILE) or run 'make $(SQLITE_INFO_FILE)' manually); \
+	@# The check for empty variables is now primarily in the GitHub Actions workflow
+	@# This target now just prints if the variables were successfully included.
+	@# If they were not, the grep in the workflow will fail to find the lines.
+	@if [ -z "$$(cat $(SQLITE_INFO_FILE) 2>/dev/null)" ]; then \
+		echo "Error: $(SQLITE_INFO_FILE) is empty or does not exist." >&2; \
+		exit 1; \
 	fi
 	@echo "SQLITE_AMALGATION: $(SQLITE_AMALGATION)"
 	@echo "SQLITE_SOURCEURL: $(SQLITE_SOURCEURL)"

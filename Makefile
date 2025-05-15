@@ -18,20 +18,34 @@ $(SQLITE_INFO_FILE):
 	@SQLITE_DOWNLOAD_PAGE_CONTENT=$$(curl -fsSL https://sqlite.org/download.html); \
 	if [ -z "$$SQLITE_DOWNLOAD_PAGE_CONTENT" ]; then \
 		echo "Error: curl failed to fetch download page." >&2; \
+		rm -f $(SQLITE_INFO_FILE); \
 		exit 1; \
 	fi; \
-	YYYY_VAL=$$(echo "$$SQLITE_DOWNLOAD_PAGE_CONTENT" | sed -n 's/.*href="\([0-9]\{4\}\)\/sqlite-amalgamation-[0-9]*\.zip".*/\1/p' | head -n1); \
-	SQLITE_AMALGATION_VAL=$$(echo "$$SQLITE_DOWNLOAD_PAGE_CONTENT" | sed -n 's/.*href=".*\/\(sqlite-amalgamation-[0-9]*\)\.zip".*/\1/p' | head -n1); \
+	AMALGAMATION_LINE=$$(echo "$$SQLITE_DOWNLOAD_PAGE_CONTENT" | grep '^PRODUCT,[^,]*,[0-9]\{4\}/sqlite-amalgamation-[0-9]*\.zip' | head -n 1); \
+	if [ -z "$$AMALGAMATION_LINE" ]; then \
+		echo "Error: Failed to find amalgamation line in CSV data from download page." >&2; \
+		echo "Page content sample (first 600 chars):" >&2; \
+		echo "$$SQLITE_DOWNLOAD_PAGE_CONTENT" | head -c 600 | sed 's/^/| /' >&2; \
+		echo "Attempted grep pattern: '^PRODUCT,[^,]*,[0-9]\{4\}/sqlite-amalgamation-[0-9]*\.zip'" >&2; \
+		rm -f $(SQLITE_INFO_FILE); \
+		exit 1; \
+	fi; \
+	YYYY_VAL=$$(echo "$$AMALGAMATION_LINE" | cut -d',' -f3 | cut -d'/' -f1); \
+	AMALGAMATION_ZIP_FILENAME=$$(echo "$$AMALGAMATION_LINE" | cut -d',' -f3 | cut -d'/' -f2); \
+	SQLITE_AMALGATION_VAL=$$(echo "$$AMALGAMATION_ZIP_FILENAME" | sed 's/\.zip$//'); \
 	if [ -z "$$YYYY_VAL" ] || [ -z "$$SQLITE_AMALGATION_VAL" ]; then \
-		echo "Error: Failed to parse YYYY or SQLITE_AMALGATION from download page." >&2; \
-		echo "Page content sample (first 200 chars): $$(echo "$$SQLITE_DOWNLOAD_PAGE_CONTENT" | head -c 200)" >&2; \
+		echo "Error: Failed to parse YYYY or SQLITE_AMALGATION from CSV data." >&2; \
+		echo "AMALGAMATION_LINE: $$AMALGAMATION_LINE" >&2; \
+		echo "Parsed YYYY_VAL: '$$YYYY_VAL'" >&2; \
+		echo "Parsed AMALGAMATION_ZIP_FILENAME: '$$AMALGAMATION_ZIP_FILENAME'" >&2; \
+		echo "Parsed SQLITE_AMALGATION_VAL: '$$SQLITE_AMALGATION_VAL'" >&2; \
 		rm -f $(SQLITE_INFO_FILE); \
 		exit 1; \
 	fi; \
 	echo "YYYY := $$YYYY_VAL" > $(SQLITE_INFO_FILE); \
 	echo "SQLITE_AMALGATION := $$SQLITE_AMALGATION_VAL" >> $(SQLITE_INFO_FILE); \
 	echo "SQLITE_SOURCEURL := https://www.sqlite.org/$$YYYY_VAL/$$SQLITE_AMALGATION_VAL.zip" >> $(SQLITE_INFO_FILE); \
-	@echo "===> SQLite metadata fetched and stored in $(SQLITE_INFO_FILE)."
+	@echo "===> SQLite metadata (from CSV) fetched and stored in $(SQLITE_INFO_FILE)."
 
 # TARGET ABI            := armeabi armeabi-v7a arm64-v8a x86 x86_64 mips mips64 (or all)
 TARGET_ABI		:= arm64-v8a armeabi-v7a x86 x86_64

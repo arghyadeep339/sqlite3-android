@@ -43,7 +43,7 @@ $(SQLITE_INFO_FILE):
 	echo "YYYY := $$YYYY_VAL" > $(SQLITE_INFO_FILE); \
 	echo "SQLITE_AMALGATION := $$SQLITE_AMALGATION_VAL" >> $(SQLITE_INFO_FILE); \
 	echo "SQLITE_SOURCEURL := https://www.sqlite.org/$$YYYY_VAL/$$SQLITE_AMALGATION_VAL.zip" >> $(SQLITE_INFO_FILE); \
-	@echo "===> SQLite metadata (from CSV) fetched and stored in $(SQLITE_INFO_FILE)."
+	echo "===> SQLite metadata (from CSV) fetched and stored in $(SQLITE_INFO_FILE)."
 
 # TARGET ABI            := armeabi armeabi-v7a arm64-v8a x86 x86_64 mips mips64 (or all)
 TARGET_ABI		:= arm64-v8a armeabi-v7a x86 x86_64
@@ -82,7 +82,7 @@ clean-all: clean
 
 print: $(SQLITE_INFO_FILE)
 	@if [ -z "$(SQLITE_AMALGATION)" ] || [ -z "$(SQLITE_SOURCEURL)" ] || [ -z "$(YYYY)" ]; then \
-		$(error Essential SQLite variables are not set. Check $(SQLITE_INFO_FILE)); \
+		$(error Essential SQLite variables are not set. Check $(SQLITE_INFO_FILE) or run 'make $(SQLITE_INFO_FILE)' manually); \
 	fi
 	@echo "SQLITE_AMALGATION: $(SQLITE_AMALGATION)"
 	@echo "SQLITE_SOURCEURL: $(SQLITE_SOURCEURL)"

@@ -3,8 +3,8 @@
 .DEFAULT_GOAL		:= build
 SQLITE_DOWNLOAD_PAGE := $(shell curl -s https://sqlite.org/download.html)
 YYYY := $(shell echo "$(SQLITE_DOWNLOAD_PAGE)" | grep -oP 'href="\K\d+/sqlite-amalgamation-\d+\.zip' | head -n1 | cut -d/ -f1)
+SQLITE_AMALGATION := $(shell echo "$(SQLITE_DOWNLOAD_PAGE)" | grep -oP 'href="\K[^"]*sqlite-amalgamation-\d+' | sed 's:.*/::' | tail -n1)
 #SQLITE_AMALGATION	:= sqlite-amalgamation-3490200
-SQLITE_AMALGATION := $(shell echo "$(SQLITE_DOWNLOAD_PAGE)" | grep -oP 'href="\K[\d/]+sqlite-amalgamation-\d+' | sed 's:.*/::' | tail -n1)
 SQLITE_SOURCEURL	:= https://sqlite.org/$(YYYY)/$(SQLITE_AMALGATION).zip  # SQLite --version 3.49.2 Source Code: https://www.sqlite.org/download.html
 # TARGET ABI            := armeabi armeabi-v7a arm64-v8a x86 x86_64 mips mips64 (or all)
 TARGET_ABI		:= arm64-v8a armeabi-v7a x86 x86_64
@@ -40,3 +40,7 @@ clean:
 clean-all: clean
 	@echo "===> Deleting $(SQLITE_AMALGATION).zip"
 	@rm -f "$(SQLITE_AMALGATION).zip"
+
+print:
+	@echo "SQLITE_AMALGATION: $(SQLITE_AMALGATION)"
+	@echo "SQLITE_SOURCEURL: $(SQLITE_SOURCEURL)"

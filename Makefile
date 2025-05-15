@@ -42,5 +42,9 @@ clean-all: clean
 	@rm -f "$(SQLITE_AMALGATION).zip"
 
 print:
+	@echo "SQLITE_DOWNLOAD_PAGE_CONTENT_START"
+	@$(shell curl -s https://sqlite.org/download.html)
+	@echo "SQLITE_DOWNLOAD_PAGE_CONTENT_END"
 	@echo "SQLITE_AMALGATION: $(SQLITE_AMALGATION)"
 	@echo "SQLITE_SOURCEURL: $(SQLITE_SOURCEURL)"
+	@echo "YYYY: $(YYYY)"

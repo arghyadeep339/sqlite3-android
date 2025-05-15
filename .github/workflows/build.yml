@@ -86,23 +86,6 @@ jobs:
           # Print extracted values for verification
           echo "Evaluated SQLITE_AMALGATION: $SQLITE_AMALGATION"
           echo "Evaluated SQLITE_SOURCEURL: $SQLITE_SOURCEURL"
-      
-      - name: Source Makefile environment variables
-        run: |
-          # Extract variables from the Makefile
-          SQLITE_AMALGATION=$(grep -E '^SQLITE_AMALGATION\s*:=\s*\S+' Makefile | sed -e 's/.*:= \(.*\)/\1/')
-          SQLITE_SOURCEURL=$(grep -E '^SQLITE_SOURCEURL\s*:=\s*\S+' Makefile | sed -e 's/.*:= \(.*\)/\1/')
-          SQLITE_SOURCEURL=$(echo "$SQLITE_SOURCEURL" | sed "s/\$(SQLITE_AMALGATION)/$SQLITE_AMALGATION/")
-          SQLITE_SOURCEURL=$(echo "$SQLITE_SOURCEURL" | sed -e 's/ *#.*//')  # Remove trailing comments
-          SQLITE_SOURCEURL="https://www.${SQLITE_SOURCEURL#*:\/\/}"  # Ensure URL has 'www.'
-
-          # Save variables to environment
-          echo "SQLITE_AMALGATION=$SQLITE_AMALGATION" >> $GITHUB_ENV
-          echo "SQLITE_SOURCEURL=$SQLITE_SOURCEURL" >> $GITHUB_ENV
-
-          # Print the extracted variables
-          echo "SQLITE_AMALGATION: $SQLITE_AMALGATION"
-          echo "SQLITE_SOURCEURL: $SQLITE_SOURCEURL"
 
       - name: Download SQLite Source ZIP if needed
         run: |

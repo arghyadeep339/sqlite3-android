@@ -2,7 +2,7 @@
 #
 .DEFAULT_GOAL		:= build
 SQLITE_DOWNLOAD_PAGE := $(shell curl -s https://sqlite.org/download.html)
-YYYY := $(shell echo "$$SQLITE_DOWNLOAD_PAGE" | sed -n 's/.*href="\([0-9]*\)\/sqlite-amalgamation-[0-9]*\.zip".*/\1/p' | head -n1)
+YYYY := $(shell echo "$$SQLITE_DOWNLOAD_PAGE" | sed -n 's/.*href="\([0-9]\{4\}\)\/sqlite-amalgamation-[0-9]*\.zip".*/\1/p' | head -n1)
 SQLITE_AMALGATION := $(shell echo "$$SQLITE_DOWNLOAD_PAGE" | sed -n 's/.*href=".*\/\(sqlite-amalgamation-[0-9]*\)\.zip".*/\1/p' | head -n1)
 #SQLITE_AMALGATION	:= sqlite-amalgamation-3490200
 SQLITE_SOURCEURL := https://www.sqlite.org/$(YYYY)/$(SQLITE_AMALGATION).zip  # SQLite --version 3.49.2 Source Code: https://www.sqlite.org/download.html

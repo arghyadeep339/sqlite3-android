@@ -89,22 +89,29 @@ jobs:
 
       - name: Source Makefile environment variables
         run: |
-          # This will now trigger the creation of .sqlite_info if it doesn't exist
-          make print # Changed from --silent to see output from fetch-sqlite-info if it runs
-          
+          # Step 1: Ensure .sqlite_info is created and variables are available for subsequent make calls
+          make $(SQLITE_INFO_FILE) 
+          echo "--- Content of .sqlite_info after creation ---"
+          cat .sqlite_info || echo ".sqlite_info not found or empty"
+          echo "--- End of .sqlite_info content ---"
+
+          # Step 2: Now that .sqlite_info exists, make print should work and variables should be set
           SQLITE_AMALGATION_LINE=$(make --silent print | grep '^SQLITE_AMALGATION:')
           SQLITE_AMALGATION=$(echo "$SQLITE_AMALGATION_LINE" | sed 's/^SQLITE_AMALGATION: //' | tr -d '[:space:]')
+          echo "SQLITE_AMALGATION_FROM_MAKE_PRINT=$SQLITE_AMALGATION" # For debugging
           echo "SQLITE_AMALGATION=$SQLITE_AMALGATION" >> $GITHUB_ENV
           echo "Extracted SQLITE_AMALGATION: $SQLITE_AMALGATION"
 
           SQLITE_SOURCEURL_LINE=$(make --silent print | grep '^SQLITE_SOURCEURL:')
           SQLITE_SOURCEURL=$(echo "$SQLITE_SOURCEURL_LINE" | sed 's/^SQLITE_SOURCEURL: //' | tr -d '[:space:]')
+          echo "SQLITE_SOURCEURL_FROM_MAKE_PRINT=$SQLITE_SOURCEURL" # For debugging
           echo "SQLITE_SOURCEURL=$SQLITE_SOURCEURL" >> $GITHUB_ENV
           echo "Extracted SQLITE_SOURCEURL: $SQLITE_SOURCEURL"
           
           # Verify variables are not empty
           if [ -z "$SQLITE_AMALGATION" ] || [ -z "$SQLITE_SOURCEURL" ]; then
             echo "Error: SQLITE_AMALGATION or SQLITE_SOURCEURL is empty after sourcing from Makefile."
+            ls -l .sqlite_info # Show .sqlite_info details
             exit 1
           fi
       

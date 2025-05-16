@@ -1,21 +1,46 @@
 name: Build SQLite for Android
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at 00:00 UTC
 
 jobs:
-  build:
+  version-check:
     runs-on: macOS-latest
+    outputs:
+      should-build: ${{ steps.compare.outputs.build }}
+    steps:
+      - name: Get GitHub release version
+        id: github_version
+        run: |
+          VERSION=$(curl -sL https://github.com/${{ github.repository }}/releases/tag/all | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          echo "github_version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Get SQLite.org version
+        id: sqlite_version
+        run: |
+          VERSION=$(curl -s https://sqlite.org/ | grep -oE 'Version [0-9]+\.[0-9]+\.[0-9]+' | cut -d' ' -f2)
+          echo "sqlite_version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Compare versions
+        id: compare
+        run: |
+          if [[ "${{ steps.github_version.outputs.github_version }}" != "${{ steps.sqlite_version.outputs.sqlite_version }}" ]]; then
+            echo "build=true" >> $GITHUB_OUTPUT
+            echo "New version detected"
+          else
+            echo "build=false" >> $GITHUB_OUTPUT
+            echo "Versions match"
+          fi
 
+  build:
+    needs: version-check
+    if: ${{ needs.version-check.outputs.should-build == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: macOS-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up JDK
         uses: actions/setup-java@v2
@@ -25,29 +50,34 @@ jobs:
 
       - name: Install NDK
         run: |
+          # Get latest LTS NDK version
+          latestNDK=$(curl -sL https://developer.android.com/ndk/downloads | grep 'Latest LTS Version' | sed -n 's/.*(\(.*\)).*/\1/p')
+          ndkVersion=$(curl -sL https://developer.android.com/ndk/downloads | grep -o 'ndkVersion "[^"]*"' | head -n1 | sed 's/ndkVersion "\(.*\)"/\1/')
+          ndkBuildNumber=$(curl -sL https://developer.android.com/ndk/downloads | grep -o 'ndkVersion "[^"]*"' | head -n1 | sed 's/ndkVersion "\(.*\)"/\1/' | cut -d. -f3)
+          echo "Latest NDK LTS Version: $latestNDK"
           # Download the NDK .dmg file
-          wget https://dl.google.com/android/repository/android-ndk-r27c-darwin.dmg -O android-ndk-r27c.dmg
+          wget https://dl.google.com/android/repository/android-ndk-${latestNDK}-darwin.dmg -O android-ndk-${latestNDK}.dmg
         
           # Mount the .dmg file
-          hdiutil attach android-ndk-r27c.dmg
+          hdiutil attach android-ndk-${latestNDK}.dmg
         
           # List the contents of the mounted volume to find the correct NDK folder
           echo "Listing the contents of the mounted volume:"
-          ls -l /Volumes/Android\ NDK\ r27c
+          ls -l /Volumes/Android\ NDK\ ${latestNDK}
         
-          # List the contents of the AndroidNDK12479018.app folder
-          echo "Listing contents of the AndroidNDK12479018.app folder:"
-          ls -l /Volumes/Android\ NDK\ r27c/AndroidNDK12479018.app
+          # List the contents of the AndroidNDK${ndkBuildNumber}.app folder
+          echo "Listing contents of the AndroidNDK${ndkBuildNumber}.app folder:"
+          ls -l /Volumes/Android\ NDK\ ${latestNDK}/AndroidNDK${ndkBuildNumber}.app
         
           # Check the NDK folder inside the Contents directory
           echo "Listing contents of the NDK directory:"
-          ls -l /Volumes/Android\ NDK\ r27c/AndroidNDK12479018.app/Contents/NDK
+          ls -l /Volumes/Android\ NDK\ ${latestNDK}/AndroidNDK${ndkBuildNumber}.app/Contents/NDK
         
           # Copy the NDK folder from the Contents/NDK directory
-          cp -R "/Volumes/Android NDK r27c/AndroidNDK12479018.app/Contents/NDK" $HOME/ndk
+          cp -R "/Volumes/Android NDK ${latestNDK}/AndroidNDK${ndkBuildNumber}.app/Contents/NDK" $HOME/ndk
         
           # Unmount the .dmg file
-          hdiutil detach "/Volumes/Android NDK r27c"
+          hdiutil detach "/Volumes/Android NDK ${latestNDK}"
         
           # Set NDK_PATH environment variable
           export NDK_PATH=$HOME/ndk
@@ -217,28 +247,28 @@ jobs:
           - check sqlite exist or not in your device:
           ~ adb shell ls -l /data/local/tmp/sqlite
           Termux with SU:
-          ~ su -c "ls -l /data/local/tmp/sqlite"
+          ~ su -c \"ls -l /data/local/tmp/sqlite\"
           - remove sqlite form device if it exist:
           ~ adb shell rm /data/local/tmp/sqlite
           Termux with SU:
-          ~ su -c "rm /data/local/tmp/sqlite"
+          ~ su -c \"rm /data/local/tmp/sqlite\"
           - push the sqlite3 binary from computer Downloads dir to the device /data/local/tmp dir:
           Windows:
           ~ adb push \$env:USERPROFILE\Downloads\sqlite /data/local/tmp/
           macOS:
           ~ adb push \$HOME/Downloads/sqlite /data/local/tmp/
           Termux with SU:
-          ~ su -c "mv \$HOME/sqlite /data/local/tmp/"
+          ~ su -c \"mv \$HOME/sqlite /data/local/tmp/\"
           - give execute (--x) permission:
           ~ adb shell chmod +x /data/local/tmp/sqlite
           Termux with SU:
-          ~ su -c "chmod +x /data/local/tmp/sqlite"
+          ~ su -c \"chmod +x /data/local/tmp/sqlite\"
           - check the sqlite version:
           ~ adb shell /data/local/tmp/sqlite --version
           Termux with SU:
-          ~ su -c "/data/local/tmp/sqlite --version"
+          ~ su -c \"/data/local/tmp/sqlite --version\"
           [Termux](https://github.com/termux/termux-app/releases/) w/o SU:
-          ~ arch=\$(getprop ro.product.cpu.abi) && curl -L "https://github.com/$GH_OWNER/sqlite3-android/releases/download/all/sqlite-\$arch" -o "\$HOME/sqlite" > /dev/null 2>&1 && chmod +x "\$HOME/sqlite" && echo && "\$HOME/sqlite" --version
+          ~ arch=\$(getprop ro.product.cpu.abi) && curl -L \"https://github.com/$GH_OWNER/sqlite3-android/releases/download/all/sqlite-\$arch\" -o \"\$HOME/sqlite\" > /dev/null 2>&1 && chmod +x \"\$HOME/sqlite\" && echo && \"\$HOME/sqlite\" --version
 
           **Full Changelog**: https://github.com/$GH_OWNER/sqlite3-android/commits/all
           " > ${{ github.workspace }}/CHANGELOG.txt

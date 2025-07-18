@@ -47,7 +47,7 @@ $(SQLITE_INFO_FILE):
 
 # fallback if scraping fails
 YYYY                ?= 2025
-SQLITE_AMALGATION	?= sqlite-amalgamation-3490200
+SQLITE_AMALGATION	?= sqlite-amalgamation-3500300
 SQLITE_SOURCEURL	?= https://sqlite.org/$(YYYY)/$(SQLITE_AMALGATION).zip  # https://www.sqlite.org/download.html
 
 # TARGET ABI            := armeabi armeabi-v7a arm64-v8a x86 x86_64 mips mips64 (or all)

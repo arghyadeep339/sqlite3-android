@@ -1,9 +1,9 @@
 # /home/norbert/sqlite3-android/Makefile
 #
 .DEFAULT_GOAL		:= build
-VERSION             := 3.53.4
+VERSION             := 3.54.1
 YEAR                := 2026
-VERSION_CODE        := 3530400
+VERSION_CODE        := 3540100
 SQLITE_AMALGATION   := sqlite-amalgamation-$(VERSION_CODE)
 SQLITE_SOURCEURL	:= https://sqlite.org/$(YEAR)/$(SQLITE_AMALGATION).zip
 # TARGET ABI          := armeabi armeabi-v7a arm64-v8a x86 x86_64 mips mips64 (or all)
